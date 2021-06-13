@@ -37,6 +37,18 @@ protected:
 	*/
 	void LookUpAtRate(float Rate);
 
+	/**
+	* Rotate controller based on mouse X movement 
+	* @param Value Input value from mouse movement
+	*/
+	void Turn(float Value);
+
+	/**
+	* Rotate controller based on mouse Y movement
+	* @param Value Input value from mouse movement
+	*/
+	void LookUp(float Value);
+
 	/** Called when the fire button is pressed */
 	void FireWeapon();
 
@@ -48,6 +60,45 @@ protected:
 	void AimingButtonReleased();
 
 	void CameraInterpZoom(float DeltaTime);
+
+	/** Set BaseTurnRate and BaseLookUpRate based on aiming */
+	void SetLookRates();
+
+	void CalculateCrosshairSpread(float DeltaTime);
+
+	/** Determines the spread of the crosshairs */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = true))
+	float CrosshairSpreadMultiplier;
+
+	/** Velocity component for crosshair's spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = true))
+	float CrosshairVelocityFactor;
+
+	/** In air component for crosshair's spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = true))
+	float CrosshairInAirFactor;
+
+	/** Aim component for crosshair's spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = true))
+	float CrosshairAimFactor;
+
+	/** Shooting component for crosshair's spread */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Crosshairs, meta = (AllowPrivateAccess = true))
+	float CrosshairShootingFactor;
+
+	void StartCrosshairBulletFire();
+
+	UFUNCTION()
+	void FinishCrosshairBulletFire();
+
+	void FireButtonPressed();
+
+	void FireButtonReleased();
+
+	void StartFireTimer();
+
+	UFUNCTION()
+	void AutoFireReset();
 
 public:	
 	// Called every frame
@@ -73,6 +124,38 @@ private:
 	/** Base look up/down in deg/sec. Other scaling may affect final look up/down rate  */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true))
 	float BaseLookUpRate;
+
+	/** Turn rate while not aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true))
+	float HipTurnRate;
+
+	/** Look up rate when not aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true))
+	float HipLookUpRate;
+
+	/** Turn rate when aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true))
+	float AimingTurnRate;
+
+	/** Look up rate when aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true))
+	float AimingLookUpRate;
+
+	/** Scale rate for mouse look sensitivity. Turn rate when not aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true), meta = (ClampMin = 0.0f, ClampMax = 1.f, UIMin = 0.0f, UIMax = 1.f))
+	float MouseHipTurnRate;
+
+	/** Scale rate for mouse look sensitivity. Look up rate when not aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true), meta = (ClampMin = 0.0f, ClampMax = 1.f, UIMin = 0.0f, UIMax = 1.f))
+	float MouseHipLookUpRate;
+
+	/** Scale rate for mouse look sensitivity. Turn rate when aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true), meta = (ClampMin = 0.0f, ClampMax = 1.f, UIMin = 0.0f, UIMax = 1.f))
+	float MouseAimingTurnRate;	
+
+	/** Scale rate for mouse look sensitivity. Look up rate when aiming */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true), meta = (ClampMin = 0.0f, ClampMax = 1.f, UIMin = 0.0f, UIMax = 1.f))
+	float MouseAimingLookUpRate;
 
 	/** Randomized gunshot sound cue */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
@@ -110,6 +193,24 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
 	float ZoomInterpSpeed;
 
+	float ShootTimeDuration;
+
+	bool bFiringBullet;
+
+	FTimerHandle CrosshairShootTimer;
+
+	/** Left mouse button or right console trigger pressed */
+	bool bFireButtonPressed;
+
+	/** True when we can fire. False when waiting for the timer */
+	bool bShouldFire;
+
+	/** Rate of automatic gun fire */
+	float AutomaticFireRate;
+
+	/** Set a timer between gun shots */
+	FTimerHandle AutoFireTimer;
+
 public:
 
 	/** Returns CameraBoom subobject */
@@ -119,4 +220,7 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
 	FORCEINLINE bool GetAiming() const { return bAiming; }
+
+	UFUNCTION(BlueprintCallable)
+	float GetCrosshairSpreadMultiplier() const;
 };

@@ -5,6 +5,17 @@
 # Visual Studio 2015 user specific files
 .vs/
 
+# Assets
+Content/Audio/
+Content/Blueprints/
+Content/FX/
+Content/Maps/
+Content/Materials
+Content/Meshes/
+Content/Sequences/
+Content/StarterContent
+Content/Textures/
+
 # Compiled Object files
 *.slo
 *.lo
