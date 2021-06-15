@@ -12,6 +12,9 @@
 #include "particles/ParticleSystemComponent.h"
 #include "Item.h"
 #include "Components/WidgetComponent.h"
+#include "Weapon.h"
+#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 AShooterCharacter::AShooterCharacter() :
@@ -108,6 +111,9 @@ void AShooterCharacter::BeginPlay()
 		CameraDefaultFOV = GetFollowCamera()->FieldOfView;
 		CameraCurrentFOV = CameraDefaultFOV;
 	}
+
+	// Spawn a default weapon and equip it
+	EquipWeapon(SpawnDefaultWeapon());
 	
 }
 
@@ -511,8 +517,13 @@ void AShooterCharacter::TraceForItems()
 
 			if (HitItem && HitItem->GetPickupWidget())
 			{
-				// Show item's pickup widget
-				HitItem->GetPickupWidget()->SetVisibility(true);
+
+				if (ItemGuids.Contains(HitItem->GetGuid()))
+				{
+					// Show item's pickup widget
+					HitItem->GetPickupWidget()->SetVisibility(true);
+				}
+				
 			}
 
 			if (TraceHitItemLastFrame)
@@ -542,6 +553,39 @@ void AShooterCharacter::TraceForItems()
 		// Item last frame should not show widget
 		TraceHitItemLastFrame->GetPickupWidget()->SetVisibility(false);
 	}
+}
+
+AWeapon* AShooterCharacter::SpawnDefaultWeapon()
+{
+	// Check the TSubclassOf variable
+	if (DefaultWeaponClass)
+	{
+		// Spawn the weapon
+		return GetWorld()->SpawnActor<AWeapon>(DefaultWeaponClass);		
+	}
+
+	return nullptr;
+}
+
+void AShooterCharacter::EquipWeapon(AWeapon* WeaponToEquip)
+{
+	if (WeaponToEquip)
+	{
+		
+
+		// Get the hand socket
+		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+
+		if (HandSocket)
+		{
+			// Attach the weapon to the right hand socket
+			HandSocket->AttachActor(WeaponToEquip, GetMesh());
+		}
+	}
+
+	EquippedWeapon = WeaponToEquip;
+
+	EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
 }
 
 // Called every frame
@@ -595,19 +639,30 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 }
 
-void AShooterCharacter::IncrementOverlappedItemCount(int8 Amount)
+void AShooterCharacter::IncrementOverlappedItemCount(int8 Amount, FGuid ID)
 {
 	if (OverlappedItemCount + Amount <= 0)
 	{
 		OverlappedItemCount = 0;
 
 		bShouldTraceForItems = false;
+
+		ItemGuids.Empty();
 	}
 	else
 	{
 		OverlappedItemCount += Amount;
 
 		bShouldTraceForItems = true;
+
+		if (Amount > 0)
+		{
+			ItemGuids.Add(ID);
+		}
+		else
+		{
+			ItemGuids.Remove(ID);
+		}
 	}
 }
 

@@ -6,6 +6,39 @@
 #include "GameFramework/Actor.h"
 #include "Item.generated.h"
 
+
+UENUM(BlueprintType)
+enum class EItemRarity : uint8 {
+	
+	EIR_Damaged UMETA(DisplayName: "Damaged"),
+
+	EIR_Common UMETA(DisplayName: "Common"),
+
+	EIR_Uncommon UMETA(DisplayName: "Uncommon"),
+
+	EIR_Rare UMETA(DisplayName: "Rare"),
+
+	EIR_Legendary UMETA(DisplayName: "Legendary"),
+
+	EIR_Max UMETA(DisplayName: "DefaultMax")
+};
+
+UENUM(BlueprintType)
+enum class EItemState : uint8 {
+
+	EIS_Pickup UMETA(DisplayName: "Pickup"),
+
+	EIS_EquipInterping UMETA(DisplayName: "EquipInterping"),
+
+	EIS_PickedUp UMETA(DisplayName: "PickedUp"),
+
+	EIS_Equipped UMETA(DisplayName: "Equipped"),
+
+	EIS_Falling UMETA(DisplayName: "Falling"),
+
+	EIS_Max UMETA(DisplayName: "DefaultMax")
+};
+
 UCLASS()
 class VORTEXSHOOTER_API AItem : public AActor
 {
@@ -26,6 +59,12 @@ protected:
 	/** Called when end overlapping area sphere */
 	UFUNCTION()
 	void OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	/** Sets the active stars array of bools based on rarity */
+	void SetActiveStars();
+
+	/** Sets properties of the item's components based on state */
+	void SetItemProperties(EItemState State);
 
 public:	
 	// Called every frame
@@ -49,8 +88,39 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
 	class USphereComponent* AreaSphere;
 
+	/** Name that appears on the pickup widget */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	FString ItemName;
+
+	/** Item Count (Ammo...etc...) */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	int32 ItemCount;
+
+	FGuid ID;
+
+	/** Item rarity determines number of stars in pickup widget */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	EItemRarity ItemRarity;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	TArray<bool> ActiveStars;
+
+	/** State of the item */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	EItemState ItemState;
+
 public:
 
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
+
+	FORCEINLINE FGuid GetGuid() const { return ID; }
+
+	FORCEINLINE USphereComponent* GetAreaSphere() const { return AreaSphere; }
+
+	FORCEINLINE UBoxComponent* GetCollisionBox() const { return CollisionBox; }
+
+	FORCEINLINE EItemState GetItemState() const { return ItemState;  }
+
+	void SetItemState(EItemState State);
 
 };

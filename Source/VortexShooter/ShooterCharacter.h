@@ -106,6 +106,12 @@ protected:
 	/** Trace for items if OverlappedItemCount is greater than zero */
 	void TraceForItems();
 
+	/** Spawns a default weapon and equips it */
+	class AWeapon* SpawnDefaultWeapon();
+
+	/** Takes a weapon and attaches it to a mesh  */
+	void EquipWeapon(class AWeapon* WeaponToEquip);
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -227,6 +233,16 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = true))
 	class AItem* TraceHitItemLastFrame;
 
+	TArray<FGuid> ItemGuids;
+
+	/** Currently equipped weapon */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = true))
+	class AWeapon* EquippedWeapon;
+
+	/** Set this in blueprints for the default weapon class */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = true))
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
 public:
 
 	/** Returns CameraBoom subobject */
@@ -240,7 +256,7 @@ public:
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount;  }
 
 	/** Add/Subtract to/from OverlappedItemCount and updates bShouldTraceForItems */
-	void IncrementOverlappedItemCount(int8 Amount);
+	void IncrementOverlappedItemCount(int8 Amount, FGuid ID);
 
 	UFUNCTION(BlueprintCallable)
 	float GetCrosshairSpreadMultiplier() const;
