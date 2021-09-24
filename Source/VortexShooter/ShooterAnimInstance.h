@@ -6,6 +6,15 @@
 #include "Animation/AnimInstance.h"
 #include "ShooterAnimInstance.generated.h"
 
+UENUM(BlueprintType)
+enum class EOffsetState : uint8 {
+	EOS_Aiming UMETA(DisplayName = "Aiming"),
+	EOS_Hip UMETA(DisplayName = "Hip"),
+	EOS_Reloading UMETA(DisplayName = "Reloading"),
+	EOS_InAir UMETA(DisplayName = "InAir"),
+	EOS_MAX UMETA(DisplayName = "DefaultMAX")
+};
+
 /**
  * 
  */
@@ -16,10 +25,20 @@ class VORTEXSHOOTER_API UShooterAnimInstance : public UAnimInstance
 
 public:
 
+	UShooterAnimInstance();
+
 	UFUNCTION(BlueprintCallable)
 	void UpdateAnimationProperties(float DeltaTime);
 
 	virtual void NativeInitializeAnimation() override;
+
+protected:
+
+	/** Handle turning in place variables */
+	void TurnInPlace();
+
+	/** Handle calculations for leaning while running */
+	void Lean(float DeltaTime);
 
 private:
 
@@ -48,4 +67,41 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement, meta = (AllowPrivateAccess = true))
 	bool bAiming;
+
+	/** Yaw of the character this frame. Only updated when standing still and not in the air */
+	float TIPCharacterYaw;
+
+	/** Yaw of the character the previous frame. Only updated when standing still and not in the air */
+	float TIPCharacterYawLastFrame;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn in Place", meta = (AllowPrivateAccess = true))
+	float RootYawOffset;
+
+	/** Rotation value this frame */
+	float RotationCurve;
+
+	/** Rotation curve value on the previous frame */
+	float RotationCurveLastFrame;
+
+	/** Pitch of the aim rotation used for aim offset */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn in Place", meta = (AllowPrivateAccess = true))
+	float Pitch;
+
+	/** True when reloading. Used to prevent aim offset while reloading */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn in Place", meta = (AllowPrivateAccess = true))
+	bool bReloading;
+
+	/** Offset state used to determine wish aim offset to use */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Turn in Place", meta = (AllowPrivateAccess = true))
+	EOffsetState OffsetState;
+
+	/** Character yaw this frame */
+	float CharacterYaw;
+
+	/** Character yaw the previous frame */
+	float CharacterYawLastFrame;
+
+	/** Yaw delta used for leaning in the running blend space */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = Lean, meta = (AllowPrivateAccess = true))
+	float YawDelta;
 };

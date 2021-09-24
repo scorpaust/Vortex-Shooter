@@ -4,7 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "AmmoType.h"
 #include "ShooterCharacter.generated.h"
+
+UENUM(BlueprintType)
+enum class ECombatState : uint8 {
+	ECS_Unoccupied UMETA(DisplayName = "Unoccupied"),
+	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
+	ECS_Reloading UMETA(DisplayName = "Reloading"),
+	ECS_MAX UMETA(DisplayName = "DefaultMAX")
+};
 
 UCLASS()
 class VORTEXSHOOTER_API AShooterCharacter : public ACharacter
@@ -121,6 +130,36 @@ protected:
 
 	/** Drops currently equipped weapon and equips traced item */
 	void SwapWeapon(AWeapon* WeaponToSwap);
+
+	/**  Initialize ammo map with ammo values */
+	void InitializeAmmoMap();
+
+	/** Check to make sure our weapon has ammo */
+	bool WeaponHasAmmo();
+
+	/** Fire Weapon Functions */
+	void PlayFireSound();
+
+	void SendBullet();
+
+	void PlayGunFireMontage();
+
+	/** Bound to the R Key and Gamepad Face Button Left */
+	void ReloadButtonPressed();
+
+	/** Handle reloading of weapon */
+	void ReloadWeapon();
+
+	/** Check to see if we have ammo of the equipped weapon ammo type */
+	bool CarryingAmmo();
+
+	/** Called from animation blueprint with Grab Clip notify */
+	UFUNCTION(BlueprintCallable)
+	void GrabClip();
+
+	/** Called from animation blueprint with Release Clip notify */
+	UFUNCTION(BlueprintCallable)
+	void ReleaseClip();
 
 public:	
 	// Called every frame
@@ -265,6 +304,37 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = true))
 	float CameraInterpElevation;
 
+	/** Map to keep track of ammo of the different ammo types */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Items, meta = (AllowPrivateAccess = true))
+	TMap<EAmmoType, int32> AmmoMap;
+
+	/** Starting amount of 9mm ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (AllowPrivateAccess = true))
+	int32 Starting9mmAmmo;
+
+	/** Starting amount of AR ammo */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Items, meta = (AllowPrivateAccess = true))
+	int32 StartingArAmmo;
+
+	/** Combat state can only fire or reload when unoccupied */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = true))
+	ECombatState CombatState;
+
+	/** Montage for reload animations */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
+	UAnimMontage* ReloadMontage;
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
+
+	/** Transform of the clip when we first grab it during reloading */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = true))
+	FTransform ClipTransform;
+
+	/** Scene component to attach to the character's hand during reloading */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = true))
+	USceneComponent* HandSceneComponent;
+
 public:
 
 	/** Returns CameraBoom subobject */
@@ -276,6 +346,8 @@ public:
 	FORCEINLINE bool GetAiming() const { return bAiming; }
 
 	FORCEINLINE int8 GetOverlappedItemCount() const { return OverlappedItemCount;  }
+
+	FORCEINLINE ECombatState GetCombatState() const { return CombatState;  }
 
 	/** Add/Subtract to/from OverlappedItemCount and updates bShouldTraceForItems */
 	void IncrementOverlappedItemCount(int8 Amount, FGuid ID);
