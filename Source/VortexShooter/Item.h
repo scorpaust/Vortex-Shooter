@@ -24,7 +24,8 @@ enum class EItemRarity : uint8 {
 };
 
 UENUM(BlueprintType)
-enum class EItemState : uint8 {
+enum class EItemState : uint8 
+{
 
 	EIS_Pickup UMETA(DisplayName: "Pickup"),
 
@@ -37,6 +38,14 @@ enum class EItemState : uint8 {
 	EIS_Falling UMETA(DisplayName: "Falling"),
 
 	EIS_Max UMETA(DisplayName: "DefaultMax")
+};
+
+UENUM(BlueprintType)
+enum class EItemType : uint8 
+{
+	EIT_Ammo UMETA(DisplayName: "Ammo"),
+	EIT_Weapon UMETA(DisplayName: "Weapon"),
+	EIT_Max UMETA(DisplayName: "DefaultMax")
 };
 
 UCLASS()
@@ -71,6 +80,11 @@ protected:
 
 	/** Handles item interpolation within the equip interping state */
 	void ItemInterp(float DeltaTime);
+
+	/** Get interp location based on the item type */
+	FVector GetInterpLocation();
+
+	void PlayPickupSound();
 
 public:	
 	// Called every frame
@@ -162,6 +176,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = true))
 	class USoundCue* EquipSound;
 
+	/** Enum for the type of item this item is */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	EItemType ItemType;
+
+	/** Index of the interp location this item is interping to */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	int32 InterpLocIndex;
+
 public:
 
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
@@ -180,9 +202,14 @@ public:
 
 	FORCEINLINE USoundCue* GetEquipSound() const { return EquipSound; }
 
+	FORCEINLINE int32 GetItemCount() const { return ItemCount;  }
+
 	void SetItemState(EItemState State);
 
 	/** Called from the AShooterCharacter class */
 	void StartItemCurve(AShooterCharacter* Char);
+
+	/** Called in AShooterCharacter  */
+	void PlayEquipSound();
 
 };
