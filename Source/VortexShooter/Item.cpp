@@ -103,6 +103,8 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 		if (ShooterCharacter)
 		{
 			ShooterCharacter->IncrementOverlappedItemCount(-1, ID);
+
+			ShooterCharacter->UnHighlightInventorySlot();
 		}
 	}
 }
@@ -267,6 +269,8 @@ void AItem::FinishInterping()
 		Character->IncrementInterpLocItemCount(InterpLocIndex, -1);
 
 		Character->GetPickupItem(this);
+
+		Character->UnHighlightInventorySlot();
 	}
 
 	// Set scale back to normal
@@ -408,6 +412,19 @@ void AItem::OnConstruction(const FTransform& transform)
 	}
 
 	EnableGlowMaterial();
+
+	// Load the data in the item rarity data table
+
+	// Path to the item rarity data table
+	FString RarityTablePath(TEXT("DataTable'/Game/_Game/DataTables/ItemRarityDataTable.ItemRarityDataTable'"));
+
+	UDataTable* RarityTableObject = Cast<UDataTable>(StaticLoadObject(UDataTable::StaticClass(), nullptr, *RarityTablePath));
+
+	if (RarityTableObject)
+	{
+		// Access items in the table
+	}
+
 }
 
 void AItem::EnableGlowMaterial()

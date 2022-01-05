@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Engine/DataTable.h"
 #include "Item.generated.h"
 
 
@@ -38,6 +39,27 @@ enum class EItemState : uint8
 	EIS_Falling UMETA(DisplayName: "Falling"),
 
 	EIS_Max UMETA(DisplayName: "DefaultMax")
+};
+
+USTRUCT(BlueprintType)
+struct FItemRarityTable : public FTableRowBase 
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor GlowColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor LightColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor DarkColor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 NumberOfStarts;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UTexture2D* IconBackground;
 };
 
 UENUM(BlueprintType)
@@ -251,6 +273,10 @@ private:
 	/** True when the character's inventory is full */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
 	bool bCharacterInventoryFull;
+
+	/** Item rarity data table */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data Table", meta = (AllowPrivateAccess = true))
+	class UDataTable* ItemRarityDataTable;
 
 public:
 
