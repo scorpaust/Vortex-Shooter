@@ -53,6 +53,8 @@ void AWeapon::ThrowWeapon()
 	bFalling = true;
 
 	GetWorldTimerManager().SetTimer(ThrowWeaponTimer, this, &AWeapon::StopFalling, ThrowWeaponTime);
+
+	EnableGlowMaterial();
 }
 
 void AWeapon::DecrementAmmo()
@@ -85,4 +87,6 @@ void AWeapon::StopFalling()
 	bFalling = false;
 
 	SetItemState(EItemState::EIS_Pickup);
+
+	StartPulseTimer();
 }

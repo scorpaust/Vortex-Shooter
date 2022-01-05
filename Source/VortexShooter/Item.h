@@ -84,7 +84,19 @@ protected:
 	/** Get interp location based on the item type */
 	FVector GetInterpLocation();
 
-	void PlayPickupSound();
+	void PlayPickupSound(bool bForcePlaySound = false);
+
+	virtual void InitializeCustomDepth();
+
+	virtual void OnConstruction(const FTransform& transform) override;
+
+	void EnableGlowMaterial();
+
+	void UpdatePulse();
+
+	void ResetPulseTimer();
+
+	void StartPulseTimer();
 
 public:	
 	// Called every frame
@@ -184,6 +196,62 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
 	int32 InterpLocIndex;
 
+	/** Index for the material we would like to change at runtime */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	int32 MaterialIndex;
+
+	/** Dynamic instance that we can change at runtime */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	UMaterialInstanceDynamic* DynamicMaterialInstance;
+
+	/** Material instance used with the dynamic material instance */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	UMaterialInstance* MaterialInstance;
+
+	bool bCanChangeCustomDepth;
+
+	/** Curve to drive the dynamic material parameters */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	class UCurveVector* PulseCurve;
+
+	/** Curve to drive the dynamic material parameters */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	UCurveVector* InterpPulseCurve;
+
+	FTimerHandle PulseTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	float PulseCurveTime;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	float GlowAmount;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	float FresnelExponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	float FresnelReflectFraction;
+
+	/** Background in this item for the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
+	UTexture2D* IconBackground;
+
+	/** Icon for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
+	UTexture2D* IconItem;
+
+	/** Ammo icon for this item in the inventory */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
+	UTexture2D* AmmoIcon;
+
+	/** Slot in the inventory array */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
+	int32 SlotIndex;
+
+	/** True when the character's inventory is full */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
+	bool bCharacterInventoryFull;
+
 public:
 
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
@@ -204,12 +272,26 @@ public:
 
 	FORCEINLINE int32 GetItemCount() const { return ItemCount;  }
 
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+
+	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
+
+	FORCEINLINE void SetCharacter(AShooterCharacter* Char) { Character = Char; }
+
+	FORCEINLINE void SetCharacterInventoryFull(bool bFull) { bCharacterInventoryFull = bFull; }
+
 	void SetItemState(EItemState State);
 
 	/** Called from the AShooterCharacter class */
-	void StartItemCurve(AShooterCharacter* Char);
+	void StartItemCurve(AShooterCharacter* Char, bool bForcePlaySound = false);
 
 	/** Called in AShooterCharacter  */
-	void PlayEquipSound();
+	void PlayEquipSound(bool bForcePlaySound = false);
+
+	virtual void EnableCustomDepth();
+
+	virtual void DisableCustomDepth();
+
+	void DisableGlowMaterial();
 
 };
