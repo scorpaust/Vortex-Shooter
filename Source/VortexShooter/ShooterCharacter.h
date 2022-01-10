@@ -270,14 +270,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = true), meta = (ClampMin = 0.0f, ClampMax = 1.f, UIMin = 0.0f, UIMax = 1.f))
 	float MouseAimingLookUpRate;
 
-	/** Randomized gunshot sound cue */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
-	class USoundCue* FireSound;
-
-	/** Flash spawned at barrel socket */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
-	class UParticleSystem* MuzzleFlash;
-
 	/** Montage for firing the weapon */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = true))
 	class UAnimMontage* HipFireMontage;
@@ -319,9 +311,6 @@ private:
 
 	/** True when we can fire. False when waiting for the timer */
 	bool bShouldFire;
-
-	/** Rate of automatic gun fire */
-	float AutomaticFireRate;
 
 	/** Set a timer between gun shots */
 	FTimerHandle AutoFireTimer;
@@ -513,6 +502,8 @@ public:
 	FORCEINLINE bool ShouldPlayPickupSound() const { return bShouldPlayPickupSound; }
 
 	FORCEINLINE bool ShouldPlayEquipSound() const { return bShouldPlayEquipSound; }
+
+	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 
 	FInterpLocation GetInterpLocation(int32 index);
 

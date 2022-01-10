@@ -60,6 +60,9 @@ struct FItemRarityTable : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UTexture2D* IconBackground;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 CustomDepthStencil;
 };
 
 UENUM(BlueprintType)
@@ -153,7 +156,7 @@ private:
 	FGuid ID;
 
 	/** Item rarity determines number of stars in pickup widget */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
 	EItemRarity ItemRarity;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Item Properties", meta = (AllowPrivateAccess = true))
@@ -254,10 +257,6 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Item Properties", meta = (AllowPrivateAccess = true))
 	float FresnelReflectFraction;
 
-	/** Background in this item for the inventory */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
-	UTexture2D* IconBackground;
-
 	/** Icon for this item in the inventory */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = true))
 	UTexture2D* IconItem;
@@ -278,6 +277,26 @@ private:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Data Table", meta = (AllowPrivateAccess = true))
 	class UDataTable* ItemRarityDataTable;
 
+	/** Color in the glow material */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
+	FLinearColor GlowColor;
+
+	/** Light color in the pick up widget */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
+	FLinearColor LightColor;
+
+	/** Dark color in the pick up widget */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
+	FLinearColor DarkColor;
+
+	/** Number of stars in the pick up widget */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
+	int32 NumberOfStars;
+
+	/** Background icon for the inventory */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Rarity", meta = (AllowPrivateAccess = true))
+	UTexture2D* IconBackground;
+
 public:
 
 	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
@@ -294,7 +313,11 @@ public:
 
 	FORCEINLINE USoundCue* GetPickupSound() const { return PickupSound; }
 
+	FORCEINLINE void SetPickupSound(USoundCue* Sound) { PickupSound = Sound; }
+
 	FORCEINLINE USoundCue* GetEquipSound() const { return EquipSound; }
+
+	FORCEINLINE void SetEquipSound(USoundCue* Sound) { EquipSound = Sound; }
 
 	FORCEINLINE int32 GetItemCount() const { return ItemCount;  }
 
@@ -305,6 +328,28 @@ public:
 	FORCEINLINE void SetCharacter(AShooterCharacter* Char) { Character = Char; }
 
 	FORCEINLINE void SetCharacterInventoryFull(bool bFull) { bCharacterInventoryFull = bFull; }
+
+	FORCEINLINE void SetItemName(FString Name) { ItemName = Name; }
+
+	/** Set ammo icon for the inventory */
+	FORCEINLINE void SetIconItem(UTexture2D* Icon) { IconItem = Icon; }
+
+	/** Set ammo icon for the pickup widget */
+	FORCEINLINE void SetAmmoIcon(UTexture2D* Icon) { AmmoIcon = Icon; }
+
+	FORCEINLINE UMaterialInstance* GetMaterialInstance() const { return MaterialInstance; }
+
+	FORCEINLINE void SetMaterialInstance(UMaterialInstance* Instance) { MaterialInstance = Instance; }
+
+	FORCEINLINE UMaterialInstanceDynamic* GetDynamicMaterialInstance() const { return DynamicMaterialInstance; }
+
+	FORCEINLINE void SetDynamicMaterialInstance(UMaterialInstanceDynamic* Instance) { DynamicMaterialInstance = Instance; }
+
+	FORCEINLINE FLinearColor GetGlowColor() const { return GlowColor; }
+
+	FORCEINLINE int32 GetMaterialIndex() { return MaterialIndex; }
+
+	FORCEINLINE void SetMaterialIndex(int32 Index) { MaterialIndex = Index; }
 
 	void SetItemState(EItemState State);
 
