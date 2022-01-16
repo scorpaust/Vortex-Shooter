@@ -15,6 +15,7 @@ Content/Meshes/
 Content/Sequences/
 Content/StarterContent
 Content/Textures/
+*.uasset
 
 # Compiled Object files
 *.slo
