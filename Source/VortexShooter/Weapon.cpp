@@ -16,7 +16,8 @@ AWeapon::AWeapon() :
 	SlideDisplacementTime(0.1f),
 	bMovingSlide(false),
 	MaxSlideDisplacement(4.f),
-	MaxRecoilRotation(20.f)
+	MaxRecoilRotation(20.f),
+	bAutomatic(true)
 {
 
 }
@@ -183,7 +184,13 @@ void AWeapon::OnConstruction(const FTransform& Transform)
 
 			BoneToHide = WeaponDataRow->BoneToHide;
 
+			bAutomatic = WeaponDataRow->bAutomatic;
+
 			GetItemMesh()->HideBoneByName(BoneToHide, EPhysBodyOp::PBO_None);
+
+			Damage = WeaponDataRow->Damage;
+
+			HeadShotDamage = WeaponDataRow->HeadShotDamage;
 		}
 
 		if (GetMaterialInstance())
