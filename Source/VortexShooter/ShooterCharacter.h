@@ -43,6 +43,9 @@ public:
 	// Sets default values for this character's properties
 	AShooterCharacter();
 
+	// Take combat damage
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -486,6 +489,22 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory", meta = (AllowPrivateAccess = true))
 	int32 HighlightedSlot;
 
+	/** Character's health */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float Health;
+
+	/** Character's maximum health */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float MaxHealth;
+
+	/** Sound made when character gets hit by a melee attack */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	class USoundCue* MeleeImpactSound;
+
+	/** Blood splatter particles for melee hit */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UParticleSystem* BloodParticles;
+
 public:
 
 	/** Returns CameraBoom subobject */
@@ -507,6 +526,10 @@ public:
 	FORCEINLINE bool ShouldPlayEquipSound() const { return bShouldPlayEquipSound; }
 
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
+
+	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
+
+	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
 
 	FInterpLocation GetInterpLocation(int32 index);
 

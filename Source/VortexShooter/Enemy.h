@@ -41,6 +41,48 @@ protected:
 
 	void UpdateHitNumbers();
 
+	/** Called when something overlaps with the agro sphere */
+	UFUNCTION()
+	void AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void SetStunned(bool Stunned);
+	
+	UFUNCTION()
+	void CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void PlayAttackMontage(FName Section, float PlayRate);
+
+	UFUNCTION(BlueprintPure)
+	FName GetAttackSectionName();
+
+	UFUNCTION()
+	void OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	// Activate / deactivate collision for weapon boxes
+	UFUNCTION(BlueprintCallable)
+	void ActivateLeftWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void DeactivateLeftWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void ActivateRightWeapon();
+
+	UFUNCTION(BlueprintCallable)
+	void DeactivateRightWeapon();
+
+	void DoDamage(class AShooterCharacter* Victime);
+
+	void SpawnBlood(AShooterCharacter* Victime, FName SocketName);
+
 private:
 
 	// Particles to spawn hen hit by bullets
@@ -99,7 +141,59 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = true, MakeEditWidget = true))
 	FVector PatrolPoint;
 
+	/** Second point for the enemy to move to */
+	UPROPERTY(EditAnywhere, Category = "Behavior Tree", meta = (AllowPrivateAccess = true, MakeEditWidget = true))
+	FVector PatrolPoint2;
+
 	class AEnemyController* EnemyController;
+
+	/** Overlap sphere for when the enemy becomes hostile */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true, MakeEditWidget = true))
+	class USphereComponent* AgroSphere;
+
+	/** True when playing the gethit animation */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	bool bStunned;
+
+	/** Chance of being stunned. 0: no stun chance; 1: 100% stun chance */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float StunChance;
+
+	/** True when in attack range. Time to attack! */
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	bool bInAttackRange;
+
+	/** Overlap sphere for the attack range */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true, MakeEditWidget = true))
+	class USphereComponent* CombatRangeSphere;
+
+	/** Montage containing different attacks */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UAnimMontage* AttackMontage;
+
+	// Attack Montage section names
+	FName AttackLFast;
+	FName AttackRFast;
+	FName AttackL;
+	FName AttackR;
+
+	// Collision volume for the left weapon
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	class UBoxComponent* LeftWeaponCollision;
+
+	// Collision volume for the right weapon
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UBoxComponent* RightWeaponCollision;
+
+	/** Base damage for enemy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float BaseDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	FName LeftWeaponSocket;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	FName RightWeaponSocket;
 
 public:	
 	// Called every frame
