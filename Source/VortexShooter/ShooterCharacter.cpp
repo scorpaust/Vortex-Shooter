@@ -21,6 +21,8 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "BulletHitInterface.h"
 #include "Enemy.h"
+#include "EnemyController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "VortexShooter.h"
 
 // Sets default values
@@ -80,6 +82,7 @@ AShooterCharacter::AShooterCharacter() :
 
 	// Combat variables
 	CombatState(ECombatState::ECS_Unoccupied),
+	StunChance(.25f),
 
 	// Movement variables
 	bCrouching(false),
@@ -176,6 +179,15 @@ AShooterCharacter::AShooterCharacter() :
 		if (Health - DamageAmount <= 0.f)
 		{
 			Health = 0.f;
+
+			Die();
+
+			auto EnemyController = Cast<AEnemyController>(EventInstigator);
+
+			if (EnemyController)
+			{
+				EnemyController->GetBlackboardComponent()->SetValueAsBool(FName(TEXT("CharacterDead")), true);
+			}
 		}
 		else
 		{
@@ -396,7 +408,7 @@ void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
 
-	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping) {
+	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned) {
 		Aim();
 	}
 }
@@ -531,6 +543,8 @@ void AShooterCharacter::StartFireTimer()
 
 void AShooterCharacter::AutoFireReset()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (EquippedWeapon == nullptr) return;
@@ -1222,11 +1236,57 @@ EPhysicalSurface AShooterCharacter::GetSurfaceType()
 	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }
 
+void AShooterCharacter::EndStun()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+
+	if (bAimingButtonPressed)
+	{
+		Aim();
+	}
+}
+
+void AShooterCharacter::Die()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+	}
+}
+
+void AShooterCharacter::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+
+	if (PC)
+	{
+		DisableInput(PC);
+	}
+}
+
 void AShooterCharacter::UnHighlightInventorySlot()
 {
 	HighlightIconDelegate.Broadcast(HighlightedSlot, false);
 
 	HighlightedSlot = -1;
+}
+
+void AShooterCharacter::Stun()
+{
+	if (Health <= 0.f) return;
+
+	CombatState = ECombatState::ECS_Stunned;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && HitReactMontage)
+	{
+		AnimInstance->Montage_Play(HitReactMontage);
+	}
 }
 
 int32 AShooterCharacter::GetInterpLocationIndex()
@@ -1347,6 +1407,7 @@ void AShooterCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 
 void AShooterCharacter::FinishReloading()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
 
 	if (bAimingButtonPressed) {
 		Aim();
@@ -1389,6 +1450,8 @@ void AShooterCharacter::FinishReloading()
 
 void AShooterCharacter::FinishEquipping()
 {
+	if (CombatState == ECombatState::ECS_Stunned) return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if (bAimingButtonPressed) 

@@ -7,7 +7,6 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/KismetMathLibrary.h"
-#include "DrawDebugHelpers.h"
 #include "EnemyController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
@@ -33,7 +32,11 @@ AEnemy::AEnemy() :
 	AttackR(TEXT("Attack_R")),
 	BaseDamage(25.f),
 	LeftWeaponSocket(TEXT("FX_TRAIL_L_01")),
-	RightWeaponSocket(TEXT("FX_TRAIL_R_01"))
+	RightWeaponSocket(TEXT("FX_TRAIL_R_01")),
+	bCanAttack(true),
+	AttackWaitTime(1.f),
+	bDying(false),
+	DeathTime(4.f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -105,10 +108,6 @@ void AEnemy::BeginPlay()
 
 	const FVector WorldPatrolPoint2 = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint2);
 
-	DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.f, 12, FColor::Red, true);
-
-	DrawDebugSphere(GetWorld(), WorldPatrolPoint2, 25.f, 12, FColor::Red, true);
-
 	if (EnemyController)
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
@@ -116,6 +115,8 @@ void AEnemy::BeginPlay()
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
 
 		EnemyController->RunBehaviorTree(BehaviorTree);
+
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
 	}	
 }
 
@@ -128,7 +129,25 @@ void AEnemy::ShowHealthBar_Implementation()
 
 void AEnemy::Die()
 {
+	if (bDying) return;
+
+	bDying = true;
+
 	HideHealthBar();
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (AnimInstance && DeathMontage)
+	{
+		AnimInstance->Montage_Play(DeathMontage);
+	}
+
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+
+		EnemyController->StopMovement();
+	}
 }
 
 void AEnemy::PlayHitMontage(FName Section, float PlayRate)
@@ -261,6 +280,15 @@ void AEnemy::PlayAttackMontage(FName Section, float PlayRate)
 
 		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
 	}
+
+	bCanAttack = false;
+
+	GetWorldTimerManager().SetTimer(AttackWaitTimer, this, &AEnemy::ResetCanAttack, AttackWaitTime);
+
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), false);
+	}
 }
 
 FName AEnemy::GetAttackSectionName()
@@ -296,6 +324,8 @@ void AEnemy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 		DoDamage(Character);
 
 		SpawnBlood(Character, LeftWeaponSocket);
+
+		StunCharacter(Character);
 	}
 
 }
@@ -309,6 +339,8 @@ void AEnemy::OnRightWeaponOverlap(UPrimitiveComponent* OverlappedComponent, AAct
 		DoDamage(Character);
 
 		SpawnBlood(Character, RightWeaponSocket);
+
+		StunCharacter(Character);
 	}
 }
 
@@ -359,6 +391,41 @@ void AEnemy::SpawnBlood(AShooterCharacter* Victime, FName SocketName)
 	}
 }
 
+void AEnemy::StunCharacter(AShooterCharacter* Victime)
+{
+	if (Victime)
+	{
+		const float Stun{ FMath::FRandRange(0.f, 1.f) };
+
+		if (Stun <= Victime->GetStunChance())
+		{
+			Victime->Stun();
+		}
+	}
+}
+
+void AEnemy::ResetCanAttack()
+{
+	bCanAttack = true;
+
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
+	}
+}
+
+void AEnemy::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+
+	GetWorldTimerManager().SetTimer(DeathTimer, this, &AEnemy::DestroyEnemy, DeathTime);
+}
+
+void AEnemy::DestroyEnemy()
+{
+	Destroy();
+}
+
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
@@ -386,6 +453,8 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.Location, FRotator(0.f), true);
 	}
 
+	if (bDying) return;
+
 	ShowHealthBar();
 
 	// Determine whether bullet hit stuns
@@ -402,6 +471,12 @@ void AEnemy::BulletHit_Implementation(FHitResult HitResult)
 
 float AEnemy::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	// Set the target blackboard key to agro the character
+	if (EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+	}
+
 	if (Health - DamageAmount <= 0.f)
 	{
 		Health = 0.f;

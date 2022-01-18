@@ -83,6 +83,17 @@ protected:
 
 	void SpawnBlood(AShooterCharacter* Victime, FName SocketName);
 
+	/** Attempt to stun character */
+	void StunCharacter(AShooterCharacter* Victime);
+
+	void ResetCanAttack();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
+
+	UFUNCTION()
+	void DestroyEnemy();
+
 private:
 
 	// Particles to spawn hen hit by bullets
@@ -194,6 +205,28 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
 	FName RightWeaponSocket;
+
+	/** True when enemy can attack */
+	UPROPERTY(VisibleAnywhere, Category = "Combat", meta = (AllowPrivateAccess = true))
+	bool bCanAttack;
+
+	FTimerHandle AttackWaitTimer;
+
+	/** Minimum wait time between attacks */
+	UPROPERTY(EditAnywhere, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float AttackWaitTime;
+
+	/** Death anim montage for the enemy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UAnimMontage* DeathMontage;
+
+	bool bDying;
+
+	FTimerHandle DeathTimer;
+
+	/** Time after death until destroy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float DeathTime;
 
 public:	
 	// Called every frame

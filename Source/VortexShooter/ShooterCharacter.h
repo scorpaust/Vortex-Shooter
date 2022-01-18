@@ -27,6 +27,7 @@ enum class ECombatState : uint8 {
 	ECS_FireTimerInProgress UMETA(DisplayName = "FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName = "Reloading"),
 	ECS_Equipping UMETA(DisplayName = "Equipping"),
+	ECS_Stunned UMETA(DisplayName = "Stunned"),
 	ECS_MAX UMETA(DisplayName = "DefaultMAX")
 };
 
@@ -218,6 +219,14 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();
+
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
+
+	void Die();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishDeath();
 
 public:	
 	// Called every frame
@@ -505,6 +514,18 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
 	UParticleSystem* BloodParticles;
 
+	/** Hit react anim montage for when character is stunned */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UAnimMontage* HitReactMontage;
+
+	/** Chance of being stunned when hit by an enemy */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	float StunChance;
+
+	/** Death anim montage for when character is dying */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat", meta = (AllowPrivateAccess = true))
+	UAnimMontage* DeathMontage;
+
 public:
 
 	/** Returns CameraBoom subobject */
@@ -531,6 +552,8 @@ public:
 
 	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
 
+	FORCEINLINE float GetStunChance() const { return StunChance; }
+
 	FInterpLocation GetInterpLocation(int32 index);
 
 	/** Add/Subtract to/from OverlappedItemCount and updates bShouldTraceForItems */
@@ -554,4 +577,6 @@ public:
 	void StartEquipSoundTimer();
 
 	void UnHighlightInventorySlot();
+
+	void Stun();
 };
