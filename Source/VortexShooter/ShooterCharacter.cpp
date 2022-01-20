@@ -106,7 +106,8 @@ AShooterCharacter::AShooterCharacter() :
 
 	// Stats
 	Health(100.f),
-	MaxHealth(100.f)
+	MaxHealth(100.f),
+	bDead(false)
 {   
 
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -232,7 +233,7 @@ void AShooterCharacter::BeginPlay()
 
 void AShooterCharacter::MoveForward(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.f)) {
+	if ((Controller != nullptr) && (Value != 0.f) && !bDead) {
 		
 		// Find out wich way is forward
 		const FRotator Rotation{ Controller->GetControlRotation() };
@@ -248,7 +249,7 @@ void AShooterCharacter::MoveForward(float Value)
 
 void AShooterCharacter::MoveRight(float Value)
 {
-	if ((Controller != nullptr) && (Value != 0.f)) {
+	if ((Controller != nullptr) && (Value != 0.f) && !bDead) {
 
 		// Find out wich way is right
 		const FRotator Rotation{ Controller->GetControlRotation() };
@@ -263,68 +264,83 @@ void AShooterCharacter::MoveRight(float Value)
 
 void AShooterCharacter::TurnAtRate(float Rate)
 {
-	// Calculate delta for this frame from the rate information
-	AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame -> deg/frame
+	if (!bDead)
+	{
+		// Calculate delta for this frame from the rate information
+		AddControllerYawInput(Rate * BaseTurnRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame -> deg/frame
+	}
 }
 
 void AShooterCharacter::LookUpAtRate(float Rate)
 {
-	AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame -> deg/frame
+	if (!bDead)
+	{
+		AddControllerPitchInput(Rate * BaseLookUpRate * GetWorld()->GetDeltaSeconds()); // deg/sec * sec/frame -> deg/frame
+	}
 }
 
 void AShooterCharacter::Turn(float Value)
 {
-	float TurnScaleFactor{};
-	if (bAiming)
+	if (!bDead)
 	{
-		TurnScaleFactor = MouseAimingTurnRate;
-	}
-	else
-	{
-		TurnScaleFactor = MouseHipTurnRate;
-	}
+		float TurnScaleFactor{};
+		if (bAiming)
+		{
+			TurnScaleFactor = MouseAimingTurnRate;
+		}
+		else
+		{
+			TurnScaleFactor = MouseHipTurnRate;
+		}
 
-	AddControllerYawInput(Value * TurnScaleFactor);
+		AddControllerYawInput(Value * TurnScaleFactor);
+	}
 }
 
 void AShooterCharacter::LookUp(float Value)
 {
-	float LookUpScaleFactor{};
-	if (bAiming)
+	if (!bDead)
 	{
-		LookUpScaleFactor = MouseAimingLookUpRate;
-	}
-	else
-	{
-		LookUpScaleFactor = MouseHipLookUpRate;
-	}
+		float LookUpScaleFactor{};
+		if (bAiming)
+		{
+			LookUpScaleFactor = MouseAimingLookUpRate;
+		}
+		else
+		{
+			LookUpScaleFactor = MouseHipLookUpRate;
+		}
 
-	AddControllerPitchInput(Value * LookUpScaleFactor);
+		AddControllerPitchInput(Value * LookUpScaleFactor);
+	}
 }
 
 void AShooterCharacter::FireWeapon()
 {
+	if (!bDead)
+	{
+		if (EquippedWeapon == nullptr) return;
 
-	if (EquippedWeapon == nullptr) return;
+		if (CombatState != ECombatState::ECS_Unoccupied) return;
 
-	if (CombatState != ECombatState::ECS_Unoccupied) return;
+		if (WeaponHasAmmo()) {
 
-	if (WeaponHasAmmo()) {
+			PlayFireSound();
 
-		PlayFireSound();
+			SendBullet();
 
-		SendBullet();
+			PlayGunFireMontage();
 
-		PlayGunFireMontage();
+			EquippedWeapon->DecrementAmmo();
 
-		EquippedWeapon->DecrementAmmo();
+			StartFireTimer();
 
-		StartFireTimer();
-
-		if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol)
-		{
-			EquippedWeapon->StartSlideTimer();
+			if (EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol)
+			{
+				EquippedWeapon->StartSlideTimer();
+			}
 		}
+	
 	}
 
 		/*
@@ -406,10 +422,13 @@ bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, 
 
 void AShooterCharacter::AimingButtonPressed()
 {
-	bAimingButtonPressed = true;
+	if (!bDead)
+	{
+		bAimingButtonPressed = true;
 
-	if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned) {
-		Aim();
+		if (CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && CombatState != ECombatState::ECS_Stunned) {
+			Aim();
+		}
 	}
 }
 
@@ -518,11 +537,12 @@ void AShooterCharacter::FinishCrosshairBulletFire()
 
 void AShooterCharacter::FireButtonPressed()
 {
+	if (!bDead)
+	{
+		bFireButtonPressed = true;
 
-	bFireButtonPressed = true;
-
-	FireWeapon();
-	
+		FireWeapon();
+	}	
 }
 
 void AShooterCharacter::FireButtonReleased()
@@ -532,13 +552,14 @@ void AShooterCharacter::FireButtonReleased()
 
 void AShooterCharacter::StartFireTimer()
 {
+	if (!bDead)
+	{
+		if (EquippedWeapon == nullptr) return;
 
-	if (EquippedWeapon == nullptr) return;
+		CombatState = ECombatState::ECS_FireTimerInProgress;
 
-	CombatState = ECombatState::ECS_FireTimerInProgress;
-
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
-	
+		GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
+	}	
 }
 
 void AShooterCharacter::AutoFireReset()
@@ -712,31 +733,34 @@ AWeapon* AShooterCharacter::SpawnDefaultWeapon()
 
 void AShooterCharacter::EquipWeapon(AWeapon* WeaponToEquip, bool bSwapping)
 {
-	if (WeaponToEquip)
+	if (!bDead)
 	{
-		// Get the hand socket
-		const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
-
-		if (HandSocket)
+		if (WeaponToEquip)
 		{
-			// Attach the weapon to the right hand socket
-			HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			// Get the hand socket
+			const USkeletalMeshSocket* HandSocket = GetMesh()->GetSocketByName(FName("RightHandSocket"));
+
+			if (HandSocket)
+			{
+				// Attach the weapon to the right hand socket
+				HandSocket->AttachActor(WeaponToEquip, GetMesh());
+			}
 		}
-	}
 
-	if (EquippedWeapon == nullptr)
-	{
-		// -1 -> no equipped weapon yet. No need to reverse the icon animation.
-		EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
-	}
-	else if (!bSwapping)
-	{
-		EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
-	}
+		if (EquippedWeapon == nullptr)
+		{
+			// -1 -> no equipped weapon yet. No need to reverse the icon animation.
+			EquipItemDelegate.Broadcast(-1, WeaponToEquip->GetSlotIndex());
+		}
+		else if (!bSwapping)
+		{
+			EquipItemDelegate.Broadcast(EquippedWeapon->GetSlotIndex(), WeaponToEquip->GetSlotIndex());
+		}
 
-	EquippedWeapon = WeaponToEquip;
+		EquippedWeapon = WeaponToEquip;
 
-	EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
+		EquippedWeapon->SetItemState(EItemState::EIS_Equipped);
+	}
 }
 
 void AShooterCharacter::DropWeapon()
@@ -771,20 +795,24 @@ void AShooterCharacter::SelectButtonReleased()
 
 void AShooterCharacter::SwapWeapon(AWeapon* WeaponToSwap)
 {
-	if (Inventory.Num() - 1 >= EquippedWeapon->GetSlotIndex())
+	if (!bDead)
 	{
-		Inventory[EquippedWeapon->GetSlotIndex()] = WeaponToSwap;
+		if (Inventory.Num() - 1 >= EquippedWeapon->GetSlotIndex())
+		{
+			Inventory[EquippedWeapon->GetSlotIndex()] = WeaponToSwap;
 
-		WeaponToSwap->SetSlotIndex(EquippedWeapon->GetSlotIndex());
+			WeaponToSwap->SetSlotIndex(EquippedWeapon->GetSlotIndex());
+		}
+
+		DropWeapon();
+
+		EquipWeapon(WeaponToSwap, true);
+
+		TraceHitItem = nullptr;
+
+		TraceHitItemLastFrame = nullptr;
 	}
-
-	DropWeapon();
-
-	EquipWeapon(WeaponToSwap, true);
-
-	TraceHitItem = nullptr;
-
-	TraceHitItemLastFrame = nullptr;
+	
 }
 
 void AShooterCharacter::InitializeAmmoMap()
@@ -835,7 +863,7 @@ void AShooterCharacter::SendBullet()
 				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>(BeamHitResult.Actor.Get());
 				if (BulletHitInterface)
 				{
-					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult, this, GetController());
 				}
 
 				AEnemy* HitEnemy = Cast<AEnemy>(BeamHitResult.Actor.Get());
@@ -1254,6 +1282,8 @@ void AShooterCharacter::Die()
 	{
 		AnimInstance->Montage_Play(DeathMontage);
 	}
+
+	bDead = true;
 }
 
 void AShooterCharacter::FinishDeath()
