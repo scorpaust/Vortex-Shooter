@@ -1292,9 +1292,20 @@ void AShooterCharacter::FinishDeath()
 
 	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
 
+	AEnemyController* EnemyController = Cast<AEnemyController>(GetController());
+
 	if (PC)
 	{
 		DisableInput(PC);
+	}
+
+	if (EnemyController)
+	{
+		if (EnemyController->GetBlackboardComponent())
+		{
+			// Set the value of the target blackboard key
+			EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);
+		}
 	}
 }
 
@@ -1317,6 +1328,11 @@ void AShooterCharacter::Stun()
 	{
 		AnimInstance->Montage_Play(HitReactMontage);
 	}
+}
+
+bool AShooterCharacter::IsDead()
+{
+	return bDead;
 }
 
 int32 AShooterCharacter::GetInterpLocationIndex()

@@ -219,7 +219,7 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 
 	auto Character = Cast<AShooterCharacter>(OtherActor);
 
-	if (Character)
+	if (Character && !Character->IsDead())
 	{
 		if (EnemyController)
 		{
@@ -230,6 +230,17 @@ void AEnemy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor*
 			}
 		}
 		
+	}
+	else
+	{
+		if (EnemyController)
+		{
+			if (EnemyController->GetBlackboardComponent())
+			{
+				// Set the value of the target blackboard key
+				EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), nullptr);
+			}
+		}
 	}
 }
 
@@ -249,7 +260,7 @@ void AEnemy::CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent, AActor
 
 	auto ShooterCharacter = Cast<AShooterCharacter>(OtherActor);
 
-	if (ShooterCharacter)
+	if (ShooterCharacter && !ShooterCharacter->IsDead())
 	{
 		bInAttackRange = true;
 
